@@ -1,7 +1,7 @@
 ---
-services: compute
+services: Compute
 platforms: java
-author: selvasingh
+author: anuchandy
 ---
 
 #Getting Started with Compute - Manage Virtual Machine Extension - in Java #
