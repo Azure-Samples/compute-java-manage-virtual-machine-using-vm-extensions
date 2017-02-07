@@ -26,7 +26,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.4.0</version>
                 <configuration>
-                    <mainClass>com.microsoft.azure.management.compute.samples.ManageVirtualMachineExtension.java</mainClass>
+                    <mainClass>com.microsoft.azure.management.compute.samples.ManageVirtualMachineExtension</mainClass>
                 </configuration>
             </plugin>
             <plugin>
