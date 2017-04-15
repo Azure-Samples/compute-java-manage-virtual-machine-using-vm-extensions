@@ -7,10 +7,14 @@ author: anuchandy
 #Getting Started with Compute - Manage Virtual Machine Extension - in Java #
 
 
-      Main function which runs the actual sample.
-      @param azure instance of the azure client
-      @return true if sample runs successfully
-     
+  Azure Compute sample for managing virtual machine extensions. -
+   - Create a Linux and Windows virtual machine
+   - Add three users (user names and passwords for windows, SSH keys for Linux)
+   - Resets user credentials
+   - Remove a user
+   - Install MySQL on Linux | Choco and MySQL on Windows
+   - Remove extensions
+ 
 
 ## Running this Sample ##
 
