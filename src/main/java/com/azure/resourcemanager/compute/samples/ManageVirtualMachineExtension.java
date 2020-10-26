@@ -1,22 +1,20 @@
-/**
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for
- * license information.
- */
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-package com.microsoft.azure.management.compute.samples;
+package com.azure.resourcemanager.compute.samples;
 
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.compute.KnownLinuxVirtualMachineImage;
-import com.microsoft.azure.management.compute.KnownWindowsVirtualMachineImage;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.compute.VirtualMachineSizeTypes;
-import com.microsoft.azure.management.resources.fluentcore.arm.Region;
-import com.microsoft.azure.management.resources.fluentcore.utils.SdkContext;
-import com.microsoft.azure.management.samples.Utils;
-import com.microsoft.rest.LogLevel;
+import com.azure.core.credential.TokenCredential;
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.identity.DefaultAzureCredentialBuilder;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.compute.models.KnownWindowsVirtualMachineImage;
+import com.azure.resourcemanager.compute.models.VirtualMachine;
+import com.azure.resourcemanager.compute.models.VirtualMachineSizeTypes;
+import com.azure.core.management.Region;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.resourcemanager.samples.Utils;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,33 +30,29 @@ import java.util.List;
 public final class ManageVirtualMachineExtension {
     /**
      * Main function which runs the actual sample.
-     * @param azure instance of the azure client
+     * @param azureResourceManager instance of the azure client
      * @return true if sample runs successfully
      */
-    public static boolean runSample(Azure azure) {
+    public static boolean runSample(AzureResourceManager azureResourceManager) {
         final Region region = Region.US_WEST_CENTRAL;
-        final String linuxVMName = SdkContext.randomResourceName("lVM", 10);
-        final String windowsVMName = SdkContext.randomResourceName("wVM", 10);
-        final String rgName = SdkContext.randomResourceName("rgCOVE", 15);
-        final String pipDnsLabelLinuxVM = SdkContext.randomResourceName("rgPip1", 25);
-        final String pipDnsLabelWindowsVM = SdkContext.randomResourceName("rgPip2", 25);
+        final String linuxVMName = Utils.randomResourceName(azureResourceManager, "lVM", 10);
+        final String windowsVMName = Utils.randomResourceName(azureResourceManager, "wVM", 10);
+        final String rgName = Utils.randomResourceName(azureResourceManager, "rgCOVE", 15);
+        final String pipDnsLabelLinuxVM = Utils.randomResourceName(azureResourceManager, "rgPip1", 25);
+        final String pipDnsLabelWindowsVM = Utils.randomResourceName(azureResourceManager, "rgPip2", 25);
 
         // Linux configurations
         //
         final String firstLinuxUserName = "tirekicker";
-        // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="Serves as an example, not for deployment. Please change when using this in your code.")]
-        final String firstLinuxUserPassword = "12NewPA$$w0rd!";
-        // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="Serves as an example, not for deployment. Please change when using this in your code.")]
-        final String firstLinuxUserNewPassword = "muy!234OR";
+        final String firstLinuxUserPassword = Utils.password();
+        final String firstLinuxUserNewPassword = Utils.password();
 
         final String secondLinuxUserName = "seconduser";
-        // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="Serves as an example, not for deployment. Please change when using this in your code.")]
-        final String secondLinuxUserPassword = "B12a6@12xyz!";
+        final String secondLinuxUserPassword = Utils.password();
         final String secondLinuxUserExpiration = "2020-12-31";
 
         final String thirdLinuxUserName = "thirduser";
-        // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="Serves as an example, not for deployment. Please change when using this in your code.")]
-        final String thirdLinuxUserPassword = "12xyz!B12a6@";
+        final String thirdLinuxUserPassword = Utils.password();
         final String thirdLinuxUserExpiration = "2020-12-31";
 
         final String linuxCustomScriptExtensionName = "CustomScriptForLinux";
@@ -89,18 +83,14 @@ public final class ManageVirtualMachineExtension {
         // Windows configurations
         //
         final String firstWindowsUserName = "tirekicker";
-        // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="Serves as an example, not for deployment. Please change when using this in your code.")]
-        final String firstWindowsUserPassword = "12NewPA$$w0rd!";
-        // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="Serves as an example, not for deployment. Please change when using this in your code.")]
-        final String firstWindowsUserNewPassword = "muy!234OR";
+        final String firstWindowsUserPassword = Utils.password();
+        final String firstWindowsUserNewPassword = Utils.password();
 
         final String secondWindowsUserName = "seconduser";
-        // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="Serves as an example, not for deployment. Please change when using this in your code.")]
-        final String secondWindowsUserPassword = "B12a6@12xyz!";
+        final String secondWindowsUserPassword = Utils.password();
 
         final String thirdWindowsUserName = "thirduser";
-        // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="Serves as an example, not for deployment. Please change when using this in your code.")]
-        final String thirdWindowsUserPassword = "12xyz!B12a6@";
+        final String thirdWindowsUserPassword = Utils.password();
 
         final String windowsVMAccessExtensionName = "VMAccessAgent";
         final String windowsVMAccessExtensionPublisherName = "Microsoft.Compute";
@@ -114,13 +104,14 @@ public final class ManageVirtualMachineExtension {
 
             System.out.println("Creating a Linux VM");
 
-            VirtualMachine linuxVM = azure.virtualMachines().define(linuxVMName)
+            VirtualMachine linuxVM = azureResourceManager.virtualMachines().define(linuxVMName)
                     .withRegion(region)
                     .withNewResourceGroup(rgName)
                     .withNewPrimaryNetwork("10.0.0.0/28")
                     .withPrimaryPrivateIPAddressDynamic()
                     .withNewPrimaryPublicIPAddress(pipDnsLabelLinuxVM)
-                    .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_14_04_LTS)
+                    // mysql-server-5.6 not available for Ubuntu 16 and 18
+                    .withLatestLinuxImage("Canonical", "UbuntuServer", "14.04.4-LTS")
                     .withRootUsername(firstLinuxUserName)
                     .withRootPassword(firstLinuxUserPassword)
                     .withSize(VirtualMachineSizeTypes.STANDARD_D3_V2)
@@ -212,7 +203,7 @@ public final class ManageVirtualMachineExtension {
 
             System.out.println("Creating a Windows VM");
 
-            VirtualMachine windowsVM = azure.virtualMachines().define(windowsVMName)
+            VirtualMachine windowsVM = azureResourceManager.virtualMachines().define(windowsVMName)
                     .withRegion(region)
                     .withExistingResourceGroup(rgName)
                     .withNewPrimaryNetwork("10.0.0.0/28")
@@ -283,15 +274,10 @@ public final class ManageVirtualMachineExtension {
             System.out.println("Removed the VM Access extensions from Windows VM");
             Utils.print(windowsVM);
             return true;
-        } catch (Exception f) {
-
-            System.out.println(f.getMessage());
-            f.printStackTrace();
-
         } finally {
             try {
                 System.out.println("Deleting Resource Group: " + rgName);
-                azure.resourceGroups().deleteByName(rgName);
+                azureResourceManager.resourceGroups().beginDeleteByName(rgName);
                 System.out.println("Deleted Resource Group: " + rgName);
             } catch (NullPointerException npe) {
                 System.out.println("Did not create any resources in Azure. No clean up is necessary");
@@ -299,7 +285,6 @@ public final class ManageVirtualMachineExtension {
                 g.printStackTrace();
             }
         }
-        return false;
     }
 
     /**
@@ -312,17 +297,21 @@ public final class ManageVirtualMachineExtension {
             //=============================================================
             // Authenticate
 
-            final File credFile = new File(System.getenv("AZURE_AUTH_LOCATION"));
+            final AzureProfile profile = new AzureProfile(AzureEnvironment.AZURE);
+            final TokenCredential credential = new DefaultAzureCredentialBuilder()
+                .authorityHost(profile.getEnvironment().getActiveDirectoryEndpoint())
+                .build();
 
-            Azure azure = Azure.configure()
-                    .withLogLevel(LogLevel.BASIC)
-                    .authenticate(credFile)
-                    .withDefaultSubscription();
+            AzureResourceManager azureResourceManager = AzureResourceManager
+                .configure()
+                .withLogLevel(HttpLogDetailLevel.BASIC)
+                .authenticate(credential, profile)
+                .withDefaultSubscription();
 
             // Print selected subscription
-            System.out.println("Selected subscription: " + azure.subscriptionId());
+            System.out.println("Selected subscription: " + azureResourceManager.subscriptionId());
 
-            runSample(azure);
+            runSample(azureResourceManager);
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
